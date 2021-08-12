@@ -85,6 +85,20 @@ allocpid() {
   return pid;
 }
 
+// get number of unused processes
+uint64 countNotUnusedProcesses(void){
+	uint64 res = 0;
+	struct proc *p;
+    for(p = proc; p < &proc[NPROC]; p++) {
+		acquire(&p->lock);
+		if(p->state != UNUSED){
+			res = res + 1;
+		}
+		release(&p->lock);
+	}
+	return res;
+} 
+
 // Look in the process table for an UNUSED proc.
 // If found, initialize state required to run in the kernel,
 // and return with p->lock held.
@@ -282,6 +296,9 @@ fork(void)
 
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
+
+  // copy mask to child.
+  np->mask = p->mask;
 
   // increment reference counts on open file descriptors.
   for(i = 0; i < NOFILE; i++)
